@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.sql.Time;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -41,9 +42,13 @@ public class CustomerService {
      * @return A list of Customers
      */
     public List<CustomerResponse> findAllCustomers() {
-        List<CustomerRecord> records = StreamSupport.stream(customerRepository.findAll().spliterator(), true).collect(Collectors.toList());
+        List<CustomerRecord> records = StreamSupport
+                .stream(customerRepository.findAll().spliterator(), true)
+                .collect(Collectors.toList());
 
         // Task 1 - Add your code here
+        return records.stream()
+                .map(record -> )
 
         return null;
     }
@@ -72,6 +77,11 @@ public class CustomerService {
     public CustomerResponse addNewCustomer(CreateCustomerRequest createCustomerRequest) {
 
         // Task 1 - Add your code here
+        CustomerRecord customerRecord = new CustomerRecord();
+        customerRecord.setId(randomUUID().toString());
+        customerRecord.setName(createCustomerRequest.getName());
+        customerRecord.setDateCreated(LocalDateTime.now().toString());
+        customerRecord.setReferrerId(createCustomerRequest.getReferrerId().toString());
 
         return null;
     }
