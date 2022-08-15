@@ -48,9 +48,9 @@ public class CustomerService {
 
         // Task 1 - Add your code here
         return records.stream()
-                .map(record -> )
+                .map(record -> toCustomerResponse(record))
+                .collect(Collectors.toList());
 
-        return null;
     }
 
     /**
@@ -60,10 +60,13 @@ public class CustomerService {
      */
     public CustomerResponse getCustomer(String customerId) {
         Optional<CustomerRecord> record = customerRepository.findById(customerId);
-
+        CustomerResponse response = null;
         // Task 1 - Add your code here
+        if(record.isPresent()) {
+            response = toCustomerResponse(record.get());
+        }
 
-        return null;
+        return response;
     }
 
     /**
@@ -76,14 +79,36 @@ public class CustomerService {
      */
     public CustomerResponse addNewCustomer(CreateCustomerRequest createCustomerRequest) {
 
+        if(createCustomerRequest.getReferrerId().isPresent() && createCustomerRequest.getReferrerId().get().length() == 0) {
+            createCustomerRequest.setReferrerId(Optional.empty());
+        }
+
+        if(createCustomerRequest.getReferrerId().isPresent()) {
+            if(!customerRepository.existsById(createCustomerRequest.getReferrerId().get())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID does not exist");
+            }
+        }
+
         // Task 1 - Add your code here
         CustomerRecord customerRecord = new CustomerRecord();
         customerRecord.setId(randomUUID().toString());
         customerRecord.setName(createCustomerRequest.getName());
         customerRecord.setDateCreated(LocalDateTime.now().toString());
-        customerRecord.setReferrerId(createCustomerRequest.getReferrerId().toString());
+        customerRecord.setReferrerId(createCustomerRequest.getReferrerId().orElse(null));
 
-        return null;
+        ReferralRequest referralRequest = new ReferralRequest();
+        referralRequest.setCustomerId(customerRecord.getId());
+        referralRequest.setReferrerId(customerRecord.getReferrerId());
+
+        customerRepository.save(customerRecord);
+
+        if(createCustomerRequest.getReferrerId().isPresent() && createCustomerRequest.getReferrerId().get().length() == 0) {
+            referralServiceClient.addReferral(new ReferralRequest(customerRecord.getId(), Optional.empty().toString()));
+        }
+
+        referralServiceClient.addReferral(referralRequest);
+
+        return toCustomerResponse(customerRecord);
     }
 
     /**
@@ -102,7 +127,7 @@ public class CustomerService {
 
         // Task 1 - Add your code here
 
-        return null;
+        return toCustomerResponse(customerRecord);
     }
 
     /**
@@ -110,6 +135,9 @@ public class CustomerService {
      * @param customerId
      */
     public void deleteCustomer(String customerId) {
+        if (customerId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Customer Name");
+        }
         customerRepository.deleteById(customerId);
     }
 
@@ -158,5 +186,25 @@ public class CustomerService {
        ----------------------------------------------------------------------------------------------------------- */
 
     // Add any private methods here
+
+    private CustomerResponse toCustomerResponse(CustomerRecord record) {
+        if (record == null) {
+            return null;
+        }
+
+        CustomerResponse customerResponse = new CustomerResponse();
+
+        if(record.getReferrerId() != null && !record.getReferrerId().isEmpty()) {
+            if(customerRepository.findById(record.getReferrerId()).isPresent()) {
+                customerResponse.setReferrerName(customerRepository.findById(record.getReferrerId()).get().getName());
+            }
+        }
+        customerResponse.setId(record.getId());
+        customerResponse.setName(record.getName());
+        customerResponse.setDateJoined(record.getDateCreated());
+        customerResponse.setReferrerId(record.getReferrerId());
+
+        return customerResponse;
+    }
 
 }
