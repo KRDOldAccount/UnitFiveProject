@@ -164,10 +164,24 @@ public class CustomerService {
      * @return
      */
     public List<CustomerResponse> getReferrals(String customerId) {
+        List<Referral> referrals = referralServiceClient.getDirectReferrals(customerId);
+        if (referrals == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Referral is null");
+        }
+        CustomerRecord record = new CustomerRecord();
 
         // Task 1 - Add your code here
+        List<CustomerResponse> customerResponseList = referrals.stream()
+                .map(referral -> {
+                    record.setReferrerId(referral.getReferrerId());
+                    record.setDateCreated(referral.getReferralDate());
+                    record.setId(referral.getCustomerId());
+                    record.setName(getCustomer(referral.getCustomerId()).getName());
+                    return toCustomerResponse(record);
+                })
+                .collect(Collectors.toList());
 
-        return null;
+        return customerResponseList;
     }
 
     /**
