@@ -14,8 +14,10 @@ import org.w3c.dom.Node;
 import javax.inject.Inject;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public class ReferralService {
@@ -39,14 +41,27 @@ public class ReferralService {
         // Task 3 Code Here
         List<ReferralRecord> roots = referralDao.findUsersWithoutReferrerId();
         List<LeaderboardEntry> permTopFive = new ArrayList<>();
+        List<Future<List<LeaderboardEntry>>> threadFutures = new ArrayList<>();
         for (ReferralRecord root: roots) {
-            List<LeaderboardEntry> treeTopFive = findTopFive(root);
-            permTopFive.addAll(treeTopFive);
-            permTopFive = permTopFive.stream()
-                    .sorted(Comparator.comparingInt(LeaderboardEntry::getNumReferrals).reversed())
-                    .limit(5)
-                    .collect(Collectors.toList());
+            ReferralTask task = new ReferralTask(referralDao, this, root);
+            threadFutures.add(executor.submit(task));
         }
+        executor.shutdown();
+        for (Future<List<LeaderboardEntry>> entryFuture: threadFutures) {
+            try {
+                permTopFive.addAll(entryFuture.get());
+                permTopFive = permTopFive.stream()
+                        .sorted(Comparator.comparingInt(LeaderboardEntry::getNumReferrals).reversed())
+                        .limit(5)
+                        .collect(Collectors.toList());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+//            List<LeaderboardEntry> treeTopFive = findTopFive(root);
+
         return permTopFive;
     }
 
@@ -124,4 +139,5 @@ public class ReferralService {
         referralDao.addReferral(record);
         return ReferralConverter.fromRecordToResponse(record);
     }
+
 }
