@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.sql.Time;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -104,9 +105,9 @@ public class CustomerService {
 
         if(createCustomerRequest.getReferrerId().isPresent() && createCustomerRequest.getReferrerId().get().length() == 0) {
             referralServiceClient.addReferral(new ReferralRequest(customerRecord.getId(), Optional.empty().toString()));
+        } else {
+            referralServiceClient.addReferral(referralRequest);
         }
-
-        referralServiceClient.addReferral(referralRequest);
 
         return toCustomerResponse(customerRecord);
     }
@@ -191,8 +192,18 @@ public class CustomerService {
     public List<LeaderboardUiEntry> getLeaderboard() {
 
         // Task 2 - Add your code here
+        List<LeaderboardEntry> leaderboardEntries = referralServiceClient.getLeaderboard();
+        List<LeaderboardUiEntry> leaderboardUiEntries = new ArrayList<>();
 
-        return null;
+
+        for (LeaderboardEntry leaderboardEntry: leaderboardEntries) {
+              LeaderboardUiEntry leaderboardUiEntry = new LeaderboardUiEntry();
+              leaderboardUiEntry.setCustomerName(getCustomer(leaderboardEntry.getCustomerId()).getName());
+              leaderboardUiEntry.setCustomerId(leaderboardEntry.getCustomerId());
+              leaderboardUiEntry.setNumReferrals(leaderboardEntry.getNumReferrals());
+              leaderboardUiEntries.add(leaderboardUiEntry);
+        }
+        return leaderboardUiEntries;
     }
 
     /* -----------------------------------------------------------------------------------------------------------

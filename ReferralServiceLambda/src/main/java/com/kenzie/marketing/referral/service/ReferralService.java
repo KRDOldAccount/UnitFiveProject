@@ -9,12 +9,13 @@ import com.kenzie.marketing.referral.service.converter.ReferralConverter;
 import com.kenzie.marketing.referral.service.dao.ReferralDao;
 import com.kenzie.marketing.referral.service.exceptions.InvalidDataException;
 import com.kenzie.marketing.referral.service.model.ReferralRecord;
+import org.w3c.dom.Node;
 
 import javax.inject.Inject;
 
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class ReferralService {
@@ -36,13 +37,68 @@ public class ReferralService {
 
     public List<LeaderboardEntry> getReferralLeaderboard() {
         // Task 3 Code Here
-        return null;
+        List<ReferralRecord> roots = referralDao.findUsersWithoutReferrerId();
+        List<LeaderboardEntry> permTopFive = new ArrayList<>();
+        for (ReferralRecord root: roots) {
+            List<LeaderboardEntry> treeTopFive = findTopFive(root);
+            permTopFive.addAll(treeTopFive);
+            permTopFive = permTopFive.stream()
+                    .sorted(Comparator.comparingInt(LeaderboardEntry::getNumReferrals).reversed())
+                    .limit(5)
+                    .collect(Collectors.toList());
+        }
+        return permTopFive;
     }
+
+    private List<LeaderboardEntry> findTopFive (ReferralRecord root) {
+        Stack<Referral> rootsStack = new Stack<>();
+        List<LeaderboardEntry> referrals1 = new ArrayList<>();
+        Referral rootReferral = new Referral();
+        rootReferral.setCustomerId(root.getCustomerId());
+        Referral currentNode = rootReferral;
+        rootsStack.push(rootReferral);
+
+        while(!rootsStack.isEmpty()) {
+            currentNode = rootsStack.pop();
+            List<Referral> children = getDirectReferrals(currentNode.getCustomerId());
+
+            //check for max
+            LeaderboardEntry tempMax = new LeaderboardEntry();
+            tempMax.setCustomerId(currentNode.getCustomerId());
+            tempMax.setNumReferrals(children.size());
+            referrals1.add(tempMax);
+
+            if(children != null) {
+                rootsStack.addAll(children);
+            }
+        }
+        return referrals1.stream()
+                .sorted(Comparator.comparingInt(LeaderboardEntry::getNumReferrals).reversed())
+                .limit(5)
+                .collect(Collectors.toList());
+    }
+
+
 
     public CustomerReferrals getCustomerReferralSummary(String customerId) {
         CustomerReferrals referrals = new CustomerReferrals();
 
         // Task 2 Code Here
+        List<Referral> referrals1 = getDirectReferrals(customerId);
+        List<Referral> referrals2 = new ArrayList<>();
+        List<Referral> referrals3 = new ArrayList<>();
+        for (Referral referral: referrals1) {
+            referrals2.addAll(getDirectReferrals(referral.getCustomerId()));
+        }
+
+        for (Referral referral: referrals2) {
+            referrals3.addAll(getDirectReferrals(referral.getCustomerId()));
+        }
+
+        referrals.setNumFirstLevelReferrals(referrals1.size());
+        referrals.setNumSecondLevelReferrals(referrals2.size());
+        referrals.setNumThirdLevelReferrals(referrals3.size());
+
 
         return referrals;
     }
