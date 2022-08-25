@@ -24,7 +24,7 @@ Parameters:
 
   SolutionStackName:
     Type: String
-    Default: 64bit Amazon Linux 2 v3.2.16 running Corretto 11
+    Default: 64bit Amazon Linux 2 v3.3.1 running Corretto 11
 
 Resources:
 
