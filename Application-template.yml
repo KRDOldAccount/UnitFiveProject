@@ -16,7 +16,7 @@ Parameters:
 
   AppS3Bucket:
     Type: String
-    Default: unitproject5-ijsalman-artifacts
+    Default: unitproject5-dvorakyl-artifacts
 
   AppS3Key:
     Type: String
