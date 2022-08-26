@@ -52,32 +52,21 @@ public class CachingReferralDao implements ReferralDao {
     }
 
     // Setting value
-    private void addToCache(List<ReferralRecord> records) {
-        for (ReferralRecord record: records) {
+    private void addToCache(List<ReferralRecord> records, String rID) {
             cacheClient.setValue(
                     /* your implementation for cache key */
-                    String.format(REFERRAL_KEY, record.getCustomerId()),
+                    String.format(REFERRAL_KEY, rID),
                     REFERRAL_READ_TTL,
                     gson.toJson(records)
             );
-        }
     }
 
     @Override
     public ReferralRecord addReferral(ReferralRecord referral) {
         // Invalidate
         // Add referral to database
-//        public ReadingLog updateReadingProgress(String userId, String isbn, ZonedDateTime timestamp, int pageNumber, boolean isFinished) {
-//            String key = "books-read::" + userId + "::" + ZonedDateTime.now().getYear();
-//            ReadingLog readingLog = nonCachingReadingLogDao.updateReadingProgress(userId, isbn, timestamp, pageNumber, isFinished);
-//
-//            if (isFinished) {
-//                cacheClient.invalidate(key);
-//            }
-//            return readingLog;
-//        }
-//            String key = "ReferralKey::" + referral.getCustomerId();
-            cacheClient.invalidate(referral.getReferrerId());
+
+            cacheClient.invalidate(String.format(REFERRAL_KEY, referral.getReferrerId()));
             referralDao.addReferral(referral);
 
             return referral;
@@ -90,24 +79,14 @@ public class CachingReferralDao implements ReferralDao {
         // If the data doesn't exist in the cache,
         // Get the data from the data source
         // Add data to the cache, convert between JSON
-//        public int getBooksReadInYear(String userId, int year) {
-//            String key = "books-read::" + userId + "::" + year;
-//
-//            if (cacheClient.getValue(key) == null) {
-//                int booksRead = nonCachingReadingLogDao.getBooksReadInYear(userId, year);
-//                cacheClient.setValue(key, 60 * 60, String.valueOf(year));
-//                return booksRead;
-//            }
-//
-//            return Integer.parseInt(cacheClient.getValue(key));
-//        }
+
         List<ReferralRecord> referralRecordList = new ArrayList<>();
 
-        if (cacheClient.getValue(referrerId) == null) {
-            addToCache(referralDao.findByReferrerId(referrerId));
+        if (cacheClient.getValue(String.format(REFERRAL_KEY, referrerId)).isEmpty()) {
+            addToCache(referralDao.findByReferrerId(referrerId), referrerId);
             return referralDao.findByReferrerId(referrerId);
         }
-        return fromJson(String.valueOf(cacheClient.getValue(referrerId)));
+        return fromJson(cacheClient.getValue(String.format(REFERRAL_KEY, referrerId)).get());
     }
 
     @Override

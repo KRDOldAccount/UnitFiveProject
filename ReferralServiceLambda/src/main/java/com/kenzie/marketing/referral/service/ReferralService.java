@@ -123,6 +123,9 @@ public class ReferralService {
         List<ReferralRecord> records = referralDao.findByReferrerId(customerId);
 
         // Task 1 Code Here
+        if (records == null) {
+            return new ArrayList<>();
+        }
         List<Referral> referrals = records.stream()
                 .map(record -> ReferralConverter.fromRecordToReferral(record))
                 .collect(Collectors.toList());

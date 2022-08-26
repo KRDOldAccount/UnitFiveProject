@@ -44,8 +44,9 @@ public class CacheClient {
             throw new IllegalArgumentException();
         }
         Jedis cache = DaggerServiceComponent.create().provideJedis();
-
-            return Optional.ofNullable(cache.get(key));
+        Optional<String> valueReturn = Optional.ofNullable(cache.get(key));
+        cache.close();
+            return valueReturn;
     }
 
     public void invalidate(String key) {
@@ -58,6 +59,7 @@ public class CacheClient {
         Jedis cache = DaggerServiceComponent.create().provideJedis();
 
             cache.del(key);
+            cache.close();
     }
 
 //    private void checkNonNullKey(String key) {

@@ -198,7 +198,13 @@ public class CustomerService {
 
         for (LeaderboardEntry leaderboardEntry: leaderboardEntries) {
               LeaderboardUiEntry leaderboardUiEntry = new LeaderboardUiEntry();
-              leaderboardUiEntry.setCustomerName(getCustomer(leaderboardEntry.getCustomerId()).getName());
+              String name;
+              if (getCustomer(leaderboardEntry.getCustomerId()) == null) {
+                  name = "empty";
+                  leaderboardUiEntry.setCustomerName(name);
+              } else {
+                  leaderboardUiEntry.setCustomerName(getCustomer(leaderboardEntry.getCustomerId()).getName());
+              }
               leaderboardUiEntry.setCustomerId(leaderboardEntry.getCustomerId());
               leaderboardUiEntry.setNumReferrals(leaderboardEntry.getNumReferrals());
               leaderboardUiEntries.add(leaderboardUiEntry);
